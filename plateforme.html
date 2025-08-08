@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title> Gestion des interventions GPS IDR</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      position: relative;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: -1;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 15px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    header img {
+      height: 70px;
+      margin-right: 20px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #1a1a1a;
+      margin: 0;
+    }
+
+    .logout {
+      background-color: #dc3545;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px auto 30px auto;
+      display: block;
+      max-width: 150px;
+      text-align: center;
+    }
+
+    .logout:hover {
+      background-color: #b52a37;
+    }
+
+    form {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      margin-bottom: 30px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    form label {
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+      color: #444;
+    }
+
+    form input, form select, form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    form input:focus, form select:focus, form textarea:focus {
+      border-color: #007BFF;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+    
+
+    input[type="submit"], #exportBtn {
+      background-color: #007BFF;
+      color: white;
+      font-weight: 700;
+      margin-top: 25px;
+      border: none;
+      cursor: pointer;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    input[type="submit"]:hover, #exportBtn:hover {
+      background-color: #0056b3;
+    }
+
+    #exportBtn {
+      max-width: 900px;
+      margin: 0 auto 25px auto;
+      display: block;
+    }
+
+    #searchInput {
+      max-width: 900px;
+      margin: 0 auto 15px auto;
+      display: block;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #bbb;
+      width: 100%;
+    }
+
+    table {
+      max-width: 900px;
+      width: 100%;
+      border-collapse: collapse;
+      background-color: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 0.95rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+      color: #222;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+      font-weight: 700;
+    }
+
+    .deleteBtn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    .deleteBtn:hover {
+      background-color: #b52a37;
+    }
+
+    @media screen and (max-width: 768px) {
+      form, table, header {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 0;
+      }
+
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      header img {
+        margin-bottom: 12px;
+      }
+
+      input[type="submit"], #exportBtn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="logo-slmi.png" alt="Logo SLM-I" />
+    <h1>Plateforme S.L.M-I – Gestion des interventions GPS</h1>
+  </header>
+
+  <button class="logout" onclick="logout()">Déconnexion</button>
+
+  <form id="interventionForm">
+    <label for="client">Client :</label>
+    <input type="text" id="client" required />
+
+    <label for="technicien">Nom du technicien :</label>
+    <input type="text" id="technicien" required />
+
+    <label for="immat">Immatriculation :</label>
+    <input type="text" id="immat" required />
+
+    <label for="vehicule">Type de véhicule :</label>
+    <input type="text" id="vehicule" required />
+
+    <label for="type">Type d'intervention :</label>
+    <select id="type" required>
+      <option value="Dépannage">Dépannage</option>
+      <option value="Nouvelle Installation">Nouvelle Installation</option>
+      <option value="Désinstallation GPS">Désinstallation GPS</option>
+    </select>
+
+    <label for="intervention">Description de l'intervention :</label>
+    <textarea id="intervention" rows="3" required></textarea>
+
+    <label for="dateIntervention">Date d’intervention :</label>
+    <input type="date" id="dateIntervention" required />
+
+    <label for="lieu">Lieu d’intervention :</label>
+    <input type="text" id="lieu" required />
+
+    <label for="contact">Contact :</label>
+    <input type="text" id="contact" required />
+
+    <label for="finalite">Finalité :</label>
+    <textarea id="finalite" rows="3" required></textarea>
+
+    <input type="submit" value="Ajouter l'intervention" />
+  </form>
+
+  <input type="text" id="searchInput" placeholder="🔍 Rechercher une intervention..." />
+
+  <button id="exportBtn">📤 Exporter vers Excel</button>
+
+  <table id="interventionTable">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Technicien</th>
+        <th>Immat</th>
+        <th>Véhicule</th>
+        <th>Type</th>
+        <th>Intervention</th>
+        <th>Date</th>
+        <th>Lieu</th>
+        <th>Contact</th>
+        <th>Finalité</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Les lignes seront ajoutées ici -->
+    </tbody>
+  </table>
+
+  <script>
+  if (sessionStorage.getItem("authenticated") !== "true") {
+    window.location.href = "login.html";
+  }
+
+  function logout() {
+    sessionStorage.removeItem("authenticated");
+    window.location.href = "login.html";
+  }
+
+  const form = document.getElementById('interventionForm');
+  const tableBody = document.querySelector('#interventionTable tbody');
+  const exportBtn = document.getElementById('exportBtn');
+  const searchInput = document.getElementById('searchInput');
+
+  let editIndex = null; // Stocke l'index de l'intervention en cours d'édition
+
+  // Charger les données depuis le localStorage
+  function loadInterventions() {
+    const data = JSON.parse(localStorage.getItem('interventions')) || [];
+    tableBody.innerHTML = '';
+    data.forEach((intervention, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${intervention.client}</td>
+        <td>${intervention.technicien}</td>
+        <td>${intervention.immat}</td>
+        <td>${intervention.vehicule}</td>
+        <td>${intervention.type}</td>
+        <td>${intervention.intervention}</td>
+        <td>${intervention.date}</td>
+        <td>${intervention.lieu}</td>
+        <td>${intervention.contact}</td>
+        <td>${intervention.finalite}</td>
+        <td>
+          <button class="editBtn" data-index="${index}">Modifier</button>
+          <button class="deleteBtn" data-index="${index}">Supprimer</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
+
+  // Gérer l'ajout ou la modification
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const interventionData = {
+      client: document.getElementById('client').value.trim(),
+      technicien: document.getElementById('technicien').value.trim(),
+      immat: document.getElementById('immat').value.trim(),
+      vehicule: document.getElementById('vehicule').value.trim(),
+      type: document.getElementById('type').value,
+      intervention: document.getElementById('intervention').value.trim(),
+      date: document.getElementById('dateIntervention').value,
+      lieu: document.getElementById('lieu').value.trim(),
+      contact: document.getElementById('contact').value.trim(),
+      finalite: document.getElementById('finalite').value.trim()
+    };
+
+    let data = JSON.parse(localStorage.getItem('interventions')) || [];
+
+    if (editIndex !== null) {
+      // Mode édition
+      data[editIndex] = interventionData;
+      editIndex = null;
+    } else {
+      // Mode ajout
+      data.push(interventionData);
+    }
+
+    localStorage.setItem('interventions', JSON.stringify(data));
+    loadInterventions();
+    form.reset();
+  });
+
+  // Gérer la suppression et la modification
+  tableBody.addEventListener('click', (e) => {
+    const index = e.target.getAttribute('data-index');
+    let data = JSON.parse(localStorage.getItem('interventions')) || [];
+
+    if (e.target.classList.contains('deleteBtn')) {
+      if (confirm("Voulez-vous vraiment supprimer cette intervention ?")) {
+        data.splice(index, 1);
+        localStorage.setItem('interventions', JSON.stringify(data));
+        loadInterventions();
+      }
+    }
+
+    if (e.target.classList.contains('editBtn')) {
+      const item = data[index];
+
+      // Remplir le formulaire avec les données à modifier
+      document.getElementById('client').value = item.client;
+      document.getElementById('technicien').value = item.technicien;
+      document.getElementById('immat').value = item.immat;
+      document.getElementById('vehicule').value = item.vehicule;
+      document.getElementById('type').value = item.type;
+      document.getElementById('intervention').value = item.intervention;
+      document.getElementById('dateIntervention').value = item.date;
+      document.getElementById('lieu').value = item.lieu;
+      document.getElementById('contact').value = item.contact;
+      document.getElementById('finalite').value = item.finalite;
+
+      editIndex = index;
+
+      // Faire défiler vers le formulaire
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+
+  // Exporter vers Excel
+  exportBtn.addEventListener('click', () => {
+    const data = JSON.parse(localStorage.getItem('interventions')) || [];
+    if (data.length === 0) {
+      alert("Aucune intervention à exporter.");
+      return;
+    }
+
+    const ws_data = [
+      ["Client", "Technicien", "Immat", "Véhicule", "Type", "Intervention", "Date", "Lieu", "Contact", "Finalité"]
+    ];
+
+    data.forEach(item => {
+      ws_data.push([
+        item.client,
+        item.technicien,
+        item.immat,
+        item.vehicule,
+        item.type,
+        item.intervention,
+        item.date,
+        item.lieu,
+        item.contact,
+        item.finalite
+      ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb, ws, "Interventions");
+    XLSX.writeFile(wb, "interventions.xlsx");
+  });
+
+  // Recherche dans la table
+  searchInput.addEventListener('input', () => {
+    const filter = searchInput.value.toLowerCase();
+    const rows = tableBody.getElementsByTagName('tr');
+
+    for (let row of rows) {
+      const cellsText = Array.from(row.cells).slice(0, -1)
+        .map(td => td.textContent.toLowerCase()).join(' ');
+      row.style.display = cellsText.includes(filter) ? '' : 'none';
+    }
+  });
+
+  // Charger au démarrage
+  loadInterventions();
+</script>
+
+</body>
+</html>
